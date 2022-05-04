@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: onboard-http
+  labels:
+    app: onboard-http
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: onboard-http
+  template:
+    metadata:
+      labels:
+        app: onboard-http
+    spec:
+      containers:
+      - name: onboard-http
+        image: http-server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: onboard-http-service
+spec:
+  selector:
+    app: onboard-http
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 8080
+      nodePort: 30000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - host: test1
+      http:
+        paths:
+          - path: /web(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: onboard-http-service
+                port:
+                  number: 8080
+
